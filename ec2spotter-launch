@@ -13,7 +13,6 @@ cd $(dirname $0)
 LAUNCH_ZONE=$ec2spotter_launch_zone
 # Region is LAUNCH_ZONE minus the last character
 LAUNCH_REGION=$(echo $LAUNCH_ZONE | sed -e 's/.$//')
-PUB_KEY=$ec2spotter_key_name
 
 # Existing Volume:
 # If no volume zone
@@ -53,18 +52,13 @@ fi
 
 cat >user-data.tmp <<EOF
 #!/bin/sh
-echo AWSAccessKeyId=$AWS_ACCESS_KEY > /root/.aws.creds
-echo AWSSecretKey=$AWS_SECRET_KEY >> /root/.aws.creds
-
 apt-get update
-apt-get install -y jq
-apt-get install -y python-pip python-setuptools
-apt-get install -y git
+apt-get install -y jq python-pip python-setuptools git
 
 pip install awscli
 
 cd /root
-git clone --depth=1 https://github.com/slavivanov/ec2-spotter.git
+git clone --depth=1 https://github.com/praseodym/ec2-spotter.git
 echo Got spotter scripts from github.
 
 cd ec2-spotter
@@ -79,8 +73,11 @@ cat >specs.tmp <<EOF
 {
   "ImageId" : "$ec2spotter_preboot_image_id",
   "InstanceType": "$ec2spotter_instance_type",
-  "KeyName" : "$PUB_KEY",
+  "KeyName" : "$ec2spotter_key_name",
   "EbsOptimized": true,
+  "IamInstanceProfile": {
+    "Arn": "$ec2spotter_iam_arn"
+  },
   "Placement": {
      "AvailabilityZone": "$LAUNCH_ZONE"
   },
